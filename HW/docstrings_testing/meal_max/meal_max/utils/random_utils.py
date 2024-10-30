@@ -9,7 +9,7 @@ configure_logger(logger)
 
 def get_random() -> float:
     """
-    Fetches a random int between 1 and the number of songs in the catalog from random.org.
+    Fetches a random int between 1 and the number of meals in the catalog from random.org.
 
     Returns:
         float: The random number fetched from random.org.
