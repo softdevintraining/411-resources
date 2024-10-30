@@ -91,7 +91,7 @@ class BattleModel:
         Returns a float that represents the battle score of a given combatant meal.
 
         Args:
-            combatant (Song): the meal whose battle score is being determined.
+            combatant (Meal): the meal whose battle score is being determined.
 
         Returns a float representing a meal's battle score.
         """
