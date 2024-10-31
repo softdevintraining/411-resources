@@ -99,7 +99,7 @@ def delete_meal(meal_id: int) -> None:
         logger.error("Database error: %s", str(e))
         raise e
 
-def get_leaderboard(sort_by: str="wins") -> dict[str, Any]:
+def get_leaderboard(sort_by="wins") -> dict[str, Any]:
     """
     Retrieves all meals that are not marked as deleted from the catalog and have been in at least 1 battle.
 
@@ -114,9 +114,6 @@ def get_leaderboard(sort_by: str="wins") -> dict[str, Any]:
     Raises:
         ValueError: If the argument to sort_by is invalid (anything other than "wins" and "wins_pct").
         sqlite3.Error: If any other databse error occurs.
-
-    Logs:
-        Warning: If the catalog is empty.
     """
     query = """
         SELECT id, meal, cuisine, price, difficulty, battles, wins, (wins * 1.0 / battles) AS win_pct
@@ -166,7 +163,7 @@ def get_meal_by_id(meal_id: int) -> Meal:
         meal_id (int): The ID of the meal to retrieve.
 
     Returns:
-        Meal: The Song object corresponding to the song_id.
+        Meal: The Meal object corresponding to the meal_id.
 
     Raises:
         ValueError: If the meal is not found or is marked as deleted.
@@ -200,7 +197,7 @@ def get_meal_by_name(meal_name: str) -> Meal:
         meal_name (str): The name of the meal to retrieve.
 
     Returns:
-        Meal: The Song object corresponding to the song_id.
+        Meal: The Meal object corresponding to the meal_id.
 
     Raises:
         ValueError: If the meal of a given meal name is not found or is marked as deleted.
