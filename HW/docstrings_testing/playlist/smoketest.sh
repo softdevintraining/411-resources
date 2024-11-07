@@ -126,6 +126,8 @@ get_song_by_compound_key() {
   artist=$1
   title=$2
   year=$3
+  
+  echo $(echo $artist | sed 's/ /%20/g')
 
   echo "Getting song by compound key (Artist: '$artist', Title: '$title', Year: $year)..."
   response=$(curl -s -X GET "$BASE_URL/get-song-from-catalog-by-compound-key?artist=$(echo $artist | sed 's/ /%20/g')&title=$(echo $title | sed 's/ /%20/g')&year=$year")

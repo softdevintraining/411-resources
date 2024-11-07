@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define the base URL for the Flask API
-BASE_URL="http://localhost:5001/api"
+BASE_URL="http://localhost:5002/api"
 
 # Flag to control whether to echo JSON output
 ECHO_JSON=false
@@ -64,12 +64,12 @@ create_meal() {
   price=$3
   difficulty=$4
 
-  echo "Adding meal ($meal - $cuisine, $price) to the playlist..."
+  echo "Adding meal ($meal - $cuisine, $price, $difficulty) to the database..."
   curl -s -X POST "$BASE_URL/create-meal" -H "Content-Type: application/json" \
-    -d "{\"meal\":\"$meal\", \"cuisine\":\"$cuisine\", \"price\":$price, \"difficulty\":\"$difficulty\}" | grep -q '"status": "success"'
-
+    -d "{\"meal\":\"$meal\", \"cuisine\":\"$cuisine\", \"price\":$price, \"difficulty\":\"$difficulty\"}" | grep -q '"status": "success"'
+    
   if [ $? -eq 0 ]; then
-    echo "Meal added successfully."
+    echo "Meal added successfully!!!"
   else
     echo "Failed to add meal."
     exit 1
@@ -93,7 +93,7 @@ get_meal_by_id() {
   meal_id=$1
 
   echo "Getting meal by ID ($meal_id)..."
-  response=$(curl -s -X GET "$BASE_URL/get-meal--by-id/$meal_id")
+  response=$(curl -s -X GET "$BASE_URL/get-meal-by-id/$meal_id")
   if echo "$response" | grep -q '"status": "success"'; then
     echo "Meal retrieved successfully by ID ($meal_id)."
     if [ "$ECHO_JSON" = true ]; then
@@ -108,8 +108,11 @@ get_meal_by_id() {
 
 get_meal_by_name() {
   meal_name=$1
-  echo "Getting meal by meal name (Name: '$meal_name')..."
-  response=$(curl -s -X GET "$BASE_URL/get-meal-by-name?meal=$(echo $meal_name | sed 's/ /%20/g')")
+  meal=$(echo $meal_name | sed 's/ /%20/g')
+  echo "$BASE_URL/get-meal-by-name/$meal"
+
+  echo "Getting meal by meal name (Name: $meal_name)..."
+  response=$(curl -s -X GET "$BASE_URL/get-meal-by-name/$meal")
   if echo "$response" | grep -q '"status": "success"'; then
     echo "Meal retrieved successfully by name."
     if [ "$ECHO_JSON" = true ]; then
@@ -128,14 +131,26 @@ get_meal_by_name() {
 # Battle Management
 #
 ############################################################
+battle() {
+  echo "Starting battle with prepped combatants"
+  response=$(curl -s -X GET "$BASE_URL/battle")
+
+  if echo "$response" | grep -q '"status": "success"'; then
+    echo "$response" | jq .
+  else
+    echo "Failed to start battle."
+    echo "$response" | jq .
+    exit 1
+  fi
+}
 
 prep_combatant() {
   meal=$1
 
-  echo "Prepping meal for battle..."
+  echo "Prepping $meal for battle..."
   response=$(curl -s -X POST "$BASE_URL/prep-combatant" \
     -H "Content-Type: application/json" \
-    -d "{\"meal\":\"$meal}")
+    -d "{\"meal\":\"$meal\"}")
 
   if echo "$response" | grep -q '"status": "success"'; then
     echo "Meal successfully prepped for battle."
@@ -154,9 +169,9 @@ clear_combatants() {
   response=$(curl -s -X POST "$BASE_URL/clear-combatants")
 
   if echo "$response" | grep -q '"status": "success"'; then
-    echo "Playlist cleared successfully."
+    echo "Combatants cleared successfully."
   else
-    echo "Failed to clear playlist."
+    echo "Failed to clear combatants."
     exit 1
   fi
 }
@@ -166,10 +181,7 @@ get_combatants() {
   response=$(curl -s -X GET "$BASE_URL/get-combatants")
   if echo "$response" | grep -q '"status": "success"'; then
     echo "Combatant meals retrieved successfully."
-    if [ "$ECHO_JSON" = true ]; then
-      echo "Meals JSON:"
-      echo "$response" | jq .
-    fi
+    echo "$response" | jq .
   else
     echo "Failed to get battle combatants."
     exit 1
@@ -183,14 +195,14 @@ get_combatants() {
 ############################################################
 
 get_leaderboard() {
+  sort_by=$1
+  echo $(echo $sort_by | sed 's/ /%20/g')
+
   echo "Retrieving meal leaderboard..."
-  response=$(curl -s -X GET "$BASE_URL/leaderboard")
+  response=$(curl -s -X GET "$BASE_URL/leaderboard?sort=$(echo $sort_by | sed 's/ /%20/g')")
 
   if echo "$response" | grep -q '"status": "success"'; then
-    if [ "$ECHO_JSON" = true ]; then
-      echo "Leaderboard JSON:"
-      echo "$response" | jq .
-  fi  
+    echo "$response" | jq .
   else
     echo "Failed to retrieve meal leaderboard."
     exit 1
@@ -204,50 +216,65 @@ check_db
 
 # Clear the catalog
 clear_catalog
+clear_combatants
 
 # get meals and battle combatants, should both be empty
 #get_leaderboard
 #get_combatants
 
 # Add meals to db
-create_meal "Meal 1" "Cuisine 1" 1.0 "LOW"
-create_meal "Meal 2" "Cuisine 2" 2.0 "MED"
-create_meal "Meal 3" "Cuisine 3" 3.0 "LOW"
-create_meal "Meal 4" "Cuisine 4" 4.0 "HIGH"
+create_meal "Meal" "Cuisine 1" 1.00 "LOW"
+create_meal "Meal 2" "Cuisine 2" 2.00 "MED"
+create_meal "Meal 3" "Cuisine 3" 3.00 "LOW"
+create_meal "Meal 4" "Cuisine 4" 4.00 "HIGH"
 
 # delete meal 1, should now show meals 2-4
 delete_meal 1 
-get_leaderboard
+get_leaderboard "wins"
 
 # should get meal 2, then meal 4
 get_meal_by_id 2
-get_meal_by_name "Meal 4"
+get_meal_by_name 'Meal 3'
 
 # clear catalog again
 clear_catalog
 
 # Add meals to db again
-create_meal "Meal 1" "Cuisine 1" 10 "LOW"
-create_meal "Meal 2" "Cuisine 2" 2.0 "MED"
-create_meal "Meal 3" "Cuisine 3" 3.0 "LOW"
-create_meal "Meal 4" "Cuisine 4" 4.0 "HIGH"
+create_meal "Meal 1" "Cuisine 1" 1.00 "LOW"
+create_meal "Meal 2" "Cuisine 2" 2.00 "MED"
+create_meal "Meal 3" "Cuisine 3" 3.00 "LOW"
+create_meal "Meal 4" "Cuisine 4" 4.00 "HIGH"
 
-# prep meal 1 for battle, should show meal 1 in combatants list
+# prep meals 1 and 2 for battle, should show both in combatants list
 prep_combatant "Meal 1"
+prep_combatant "Meal 2"
 get_combatants
 
-# prep meal 3 for battle, should show meal 1 and 3 in combatants list
-prep_combatant "Meal 3"
-get_combatants
-
-# grab all meals, should show no battles for all meals
-get_leaderboard
-
-# simulate a battle, should be reflected in leaderboard
+# simulate a battle, then clear. repeat
 battle
-get_leaderboard
+clear_combatants
 
-# remove combatants from 
+prep_combatant "Meal 1"
+prep_combatant "Meal 3"
+battle
+clear_combatants
+
+prep_combatant "Meal 1"
+prep_combatant "Meal 4"
+battle
+clear_combatants
+
+prep_combatant "Meal 2"
+prep_combatant "Meal 3"
+battle
+clear_combatants
+
+
+get_leaderboard "wins"
+
+get_leaderboard "win_pct"
+
+# remove all combatants from battle
 clear_combatants
 get_combatants
 
