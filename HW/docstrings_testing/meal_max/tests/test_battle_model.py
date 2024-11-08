@@ -23,11 +23,15 @@ def sample_meal2():
     return Meal(2, 'Meal 2', 'Cuisine 2', 15.0, 'LOW')
 
 @pytest.fixture
+def sample_meal3():
+    return Meal(3, 'Meal 3', 'Cuisine 3', 22.0, 'HIGH')
+
+@pytest.fixture
 def sample_battle(sample_meal1, sample_meal2):
     return [sample_meal1, sample_meal2]
 
 ##################################################
-# Testing Battle 
+# Battle Management Test Cases
 ##################################################
 
 def test_battle(battle_model, sample_battle):
@@ -36,6 +40,16 @@ def test_battle(battle_model, sample_battle):
     assert len(battle_model.combatants) == 2
     assert battle_model.combatants[0].meal == 'Meal 1'
     assert battle_model.combatants[1].meal == 'Meal 2'
+
+    winner = battle_model.battle()
+    assert winner in ['Meal 1', 'Meal 2'], f"Winner not in combatants: {winner}"
+
+def test_not_enough_combatants(battle_model, sample_battle):
+    """Test error when not adding enough combatants to battle."""
+    battle_model.combatants.extend(sample_battle)
+    battle_model.clear_combatants()
+    with pytest.raises(ValueError, match="Two combatants must be prepped for a battle."):
+        battle_model.battle()
 
 ##################################################
 # Remove Combatants Management Test Cases
@@ -57,6 +71,14 @@ def test_prep_combatant(battle_model, sample_meal1):
     battle_model.prep_combatant(sample_meal1)
     assert len(battle_model.combatants) == 1
     assert battle_model.combatants[0].meal == 'Meal 1'
+
+def test_prep_combatant_is_full(battle_model, sample_battle, sample_meal3):
+    """Test adding too many combatants to battle."""
+    battle_model.combatants.extend(sample_battle)
+
+    with pytest.raises(ValueError, match = "Combatant list is full, cannot add more combatants."):
+        battle_model.prep_combatant(sample_meal3)
+
 
 def test_get_battle_score(battle_model, sample_battle):
     """Test getting the battle score of a given meal."""
@@ -84,3 +106,5 @@ def test_get_combatants(battle_model, sample_battle):
     assert len(retrieved_combatants) == 2
     assert retrieved_combatants[0].id == 1
     assert retrieved_combatants[1].id == 2
+    assert retrieved_combatants[0].meal == 'Meal 1'
+    assert retrieved_combatants[1].meal == 'Meal 2'
