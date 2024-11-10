@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Define the base URL for the Flask API
-BASE_URL="http://localhost:5000/api"
+BASE_URL="http://localhost:5001/api"
 
 # Flag to control whether to echo JSON output
 ECHO_JSON=false
@@ -52,6 +52,11 @@ check_db() {
 # Song Management
 #
 ##########################################################
+
+clear_catalog() {
+  echo "Clearing the playlist..."
+  curl -s -X DELETE "$BASE_URL/clear-catalog" | grep -q '"status": "success"'
+}
 
 create_song() {
   artist=$1
@@ -121,6 +126,8 @@ get_song_by_compound_key() {
   artist=$1
   title=$2
   year=$3
+  
+  echo $(echo $artist | sed 's/ /%20/g')
 
   echo "Getting song by compound key (Artist: '$artist', Title: '$title', Year: $year)..."
   response=$(curl -s -X GET "$BASE_URL/get-song-from-catalog-by-compound-key?artist=$(echo $artist | sed 's/ /%20/g')&title=$(echo $title | sed 's/ /%20/g')&year=$year")
@@ -465,6 +472,9 @@ get_song_leaderboard() {
 check_health
 check_db
 
+# Clear the catalog
+clear_catalog
+
 # Create songs
 create_song "The Beatles" "Hey Jude" 1968 "Rock" 180
 create_song "The Rolling Stones" "Paint It Black" 1966 "Rock" 180
@@ -478,6 +488,8 @@ get_all_songs
 get_song_by_id 2
 get_song_by_compound_key "The Beatles" "Let It Be" 1970
 get_random_song
+
+clear_playlist
 
 add_song_to_playlist "The Rolling Stones" "Paint It Black" 1966
 add_song_to_playlist "Queen" "Bohemian Rhapsody" 1975
